@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Master Script</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: 2em auto;
+                padding: 1em;
+                background-color: #f9f9f9;
+                color: #333;
+                text-align: center;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            body.dark {
+                background-color: #121212;
+                color: #f9f9f9;
+            }
+            #container {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 70vh;
+            }
+            #word {
+                font-size: 2.5em;
+                margin-bottom: 20px;
+            }
+            #feedback {
+                margin-top: 10px;
+                color: red;
+                font-size: 1.2em;
+            }
+            input[type="text"] {
+                font-size: 1.5em;
+                width: 80%;
+                padding: 10px;
+            }
+            #darkToggle {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                cursor: pointer;
+                font-size: 1.5em;
+                user-select: none;
+            }
+            #languageButtons {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+            }
+            .languageButton {
+                background-color: #555;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                margin: 0 5px;
+                cursor: pointer;
+                font-size: 1.5em;
+                border-radius: 5px;
+                transition: background-color 0.3s, color 0.3s;
+            }
+            .languageButton.selected {
+                background-color: #ffa500;
+                color: #000000;
+            }
+            #credit {
+                position: fixed;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 0.9em;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="languageButtons">
+            <button class="languageButton selected" data-lang="russian" title="Russian">🇷🇺 русский</button>
+            <button class="languageButton" data-lang="greek" title="Greek">🇬🇷 Ελληνικά</button>
+        </div>
+
+        <div id="darkToggle" title="Toggle Theme">🌙</div>
+
+        <div id="container">
+            <div id="word"></div>
+            <input type="text" id="answer" placeholder="Type transliteration and press Enter" autofocus/>
+            <div id="feedback"></div>
+        </div>
+
+        <div id="credit">
+            made by xorrad
+        </div>
+
+        <script src="https://unpkg.com/iuliia@latest/dist/umd/iuliia.min.js"></script>
+        <script type="module">
+            import { languages, pickRandomWord, transliterateWord } from './languages.js';
+
+            let currentLang = "russian";
+            let currentWord = "";
+            let attemptCount = 0;
+
+            const wordDiv = document.getElementById("word");
+            const answerInput = document.getElementById("answer");
+            const feedbackDiv = document.getElementById("feedback");
+            const languageButtons = document.querySelectorAll(".languageButton");
+
+            function displayNewWord() {
+                currentWord = pickRandomWord(currentLang);
+                wordDiv.textContent = currentWord;
+                answerInput.value = "";
+                feedbackDiv.textContent = "";
+                attemptCount = 0;
+            }
+
+            function updateLanguageButtons() {
+                languageButtons.forEach(button => {
+                    if (button.dataset.lang === currentLang) {
+                        button.classList.add("selected");
+                    }
+                    else {
+                        button.classList.remove("selected");
+                    }
+                });
+            }
+
+            answerInput.addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    // If we already showed the correct answer after two wrong attempts, move to the next word.
+                    if (attemptCount === 2) {
+                        displayNewWord();
+                    }
+                    else {
+                        const userAnswer = this.value.trim().toLowerCase();
+                        const correctAnswer = transliterateWord(currentLang, currentWord);
+
+                        attemptCount++;
+
+                        // if the answer is correct, then move onto the next word immediately.
+                        // Otherwise, allow one more try and wait for Enter to continue.
+                        if (userAnswer === correctAnswer.toLowerCase()) {
+                            displayNewWord();
+                        }
+                        else if (attemptCount === 1) {
+                            feedbackDiv.textContent = "Incorrect, try once more.";
+                        }
+                        else {
+                            feedbackDiv.textContent = "Correct answer: " + correctAnswer;
+                        }
+                    }
+                }
+            });
+
+            document.getElementById("darkToggle").addEventListener("click", function() {
+                document.body.classList.toggle("dark");
+                if (document.body.classList.contains("dark")) {
+                    this.textContent = "☀️";
+                }
+                else {
+                    this.textContent = "🌙";
+                }
+            });
+
+            languageButtons.forEach(button => {
+                button.addEventListener("click", function() {
+                    currentLang = this.dataset.lang;
+                    updateLanguageButtons();
+                    displayNewWord();
+                });
+            });
+
+            document.addEventListener("DOMContentLoaded", function() {
+                displayNewWord();
+            });
+        </script>
+    </body>
+</html>
